@@ -1,0 +1,15 @@
+
+\section{Rapid control prototyping}
+
+\emph{Rapid control prototyping} (\textbf{RCP}) is one of the most efficient ways to speed up the study and development of a new product. \textbf{RCP} greatly simplifies moving from the design to the implementation stage of a control system by quickly verifying how it will respond to real-world dynamics.\cite{RCP}\newline
+A great benefit of \textbf{RCP} systems is that they eliminate the tedious and error-prone process of low-level programming because they have automatic code generation capability, which gives engineers the ability to focus on the design, implementation and evaluation of the control system.\par
+Several companies offer software and hardware solutions that allow the design of control systems using a block diagram programming paradigm.
+Among them, MATLAB/Simulink is probably the best known and most widely used simulation software. MATLAB is a high-level computer language for algorithm development, visualization and data analysis, while Simulink is an interactive tool for modeling, simulating and analyzing dynamic systems.\\
+Simulink's companion product, Real-Time Workshop (\textbf{RTW}), provides automatic ANSI-C or ADA code generation from the Simulink block diagram. \textbf{RTW} is not hardware-specific, so the generated code can be deployed on a wide range of personal computers, digital signal processors, or even microcontrollers.\par
+To prevent the wasting of the development team time with hardware limitations, conventional \textbf{RCP} systems must have three key elements: \begin{enumerate}
+    \item A powerful floating-point processor, several times faster than the target processor.
+    \item Different types of flexible I/O.
+    \item A big memory.
+\end{enumerate}
+Control boards, such as the DS1104, are appropriate for motion control and are fully programmable from the Simulink environment. These large-scale \textbf{RCP} systems are very powerful and suitable for applications where functionality takes priority over price, such as in research.\par
+In the educational process, for example, the least efficient, cost-effective and portable \textbf{RCP} solutions are used. \textbf{RCP} systems for educational purposes should also be as simple to use as possible. If so, students can focus on designing and verifying control systems rather than learning how to operate a \textbf{RCP} system. Such \textbf{RCP} systems are difficult to find on the market, so institutions sometimes choose to develop custom internal solutions.\\

@@ -1,0 +1,15 @@
+\section{Hardware in the loop simulation}
+\subsection{What is a simulation?}
+It is an experiment performed on a model. A model is a mathematical representation of a physical system without discriminating whether its nature is mechanical, electrical or a combination of both, which allows to express in the form of numbers, constants and variables, any physical magnitude.\\
+The main advantage is that the behavior of a system can be studied without the need to do it physically. If we take as an example an AC electrical system whose voltage is higher than 24 V, any direct contact would be dangerous. However, the result of the simulation it´s completely dependent on how well the model represents the real system.\\
+Simulations can been performed in different domains depending on the modeling philosophy used to model the system. It can be time-domain or frequency domain.\cite{RTI}
+\subsection{Real Time simulation}
+A real time simulation it´s a time-domain simulation in which the independent variable, that it´s time, grows at the same pace as the actual time does. So, if we want some device or system to properly interact with the simulation, we should make sure that the simulation runs in real time.\\
+There are two types of RT-HIL simulation.
+\begin{itemize}
+    \item \textbf{Close-loop}: in which there is a two-way flow data between the RT-simulator and the device. This type of RT-HIL simulation is suited to control and protection applications.
+    \item \textbf{Open-loop}: in which there is a one-way flow of data, typically from the RT-simulator to the device. This type of RT-HIL simulation is suited for monitoring applications. 
+\end{itemize}
+\subsection{dSPACE HIL simulation}
+When your simulated controller is able to control your real plant, you typically produce the actual controller. For the final tests you usually connect the real controller to a model of the plant, which, of course, has to be simulated in real time. This way you can ensure that the controller does not contain any errors that could damage the real plant.\par
+This technique is called \emph{hardware‑in‑the‑loop simulation} (\textbf{HIL}). For both \textbf{RCP} and \textbf{HIL} the real‑time simulation is rather important. The computing power required by real‑time simulation highly depends on the characteristics of the simulated model: If it contains very demanding calculations you have to provide a lot of computing power because the timing cannot be satisfied otherwise. \textbf{dSPACE} systems fulfill this demand for computing power.\\
