@@ -314,6 +314,27 @@ You must now follow the compilation steps mentioned in the first section in orde
     
 With this model you will be able to test your servomotors to know their characteristics and operating limits.\par
 Remember that most servomotors operate between 0,3 and 2,3 ms pulse width for their entire range of motion.
+You can make a test using an oscilloscope to measure the pulse width.
+Changing the \textcolor{green}{\textit{Servo input value}} in the ControlDesk interface you will notice than the pulse get bigger or smaller.
+The following pictures show this example:
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.5\textwidth]{Images/Servo_Pulse_Time/0.png}
+        \caption{Pulse width at 0º angle - 380 $\mu$s}
+        \label{fig38}
+    \end{figure}
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.5\textwidth]{Images/Servo_Pulse_Time/60.png}
+        \caption{Pulse width at 60º angle - 1,36 ms}
+        \label{fig39}
+    \end{figure}
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.5\textwidth]{Images/Servo_Pulse_Time/120.png}
+        \caption{Pulse width at 120º angle - 2,36 ms}
+        \label{fig40}
+    \end{figure}
 
 \subsection{ControlDesk interface}
 
@@ -437,9 +458,107 @@ With these items, you can now press the \textcolor{green}{\textbf{Go Online}} an
 
 \newpage
 
-\section{Ball and beam software implementation}
-The objective of this project is the practical implementation of a ball and beam system using the dSPACE digital control system with a servomotor, as actuator, and an ultrasonic sensor, as an element to measure error. 
-Using the DS1104 Slave DSP F240 Blockset and the above mentioned blocks will help in these tasks.\par
-\section{KiCAD}
+\section{Ball and beam hardware and Simulink modeling}
+The objective of this project is the practical implementation of a ball and beam system using the dSPACE digital control system. The main components are a servomotor, as actuator, were the beam is attached, and an ultrasonic sensor HC-SR04, as an element to measure error. \par
+The \textbf{DS1104 Slave DSP F240 blocks}, above mentioned, were used to do the control tasks of the ball and beam system.\par
+\subsection{About the hardware}
+For the main structure, a didactic robot with five degrees of freedom was used, where the base arm was fixed to avoid involuntary movements.\par
+The HC-SR04 ultrasonic sensor was placed at one end of the beam together with the beam servo.\par
+The beam has parallel lines where the ball is supported. This ball has a diameter of 8 cm, which is sufficient for the sensor to detect it at the end of the beam.\par
+For the electrical connections, a PCB was designed using the free software for electronic design, \textbf{KiCAD}. The electrical characteristics concerning supply voltage and current consumption were extracted from the data sheets of the components. The servomotors have an independent power supply from the ultrasonic sensor. All components share GND in order to have a single reference.\par
+The corresponding data sheets are attached at the end of the document.
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=\textwidth]{Images/Ball and Bean/Hardware/Parts.jpg}
+        \caption{Ball and beam implementation using dSPACE digital control system}
+        \label{fig41}
+    \end{figure}
+    
+\subsection{Connection panel - KiCAD}
+The connection panel was designed with the actual system in mind where there are two servomotors on the base, another on the beam and an ultrasonic sensor.
+The power supply of the servomotors is independent of the sensor even though they have the same GND. The voltage for the servomotors is 6V.\par
+Regarding control signals, in the schematic diagram it can be seen that the servomotors of the base are commanded with the same signal \textbf{SPWM8} and the servomotor of the beam with \textbf{SPWM7}. These are PWM signals where \textbf{SPWM8} has a constant value of 0.0775 equivalent to a pulse width of \textcolor{green}{\textit{1.55 ms}}.\par
+The ultrasonic sensor HC-SR04 needs a minimum trigger pulse of 10 $\mu$s. For this, the \textbf{ST2PWM} signal is used, which sends the trigger pulse every 20ms. For the echo reading, the signal input \textbf{SCAP1} was used.\par
+Inside the schematic a label indicating the current connection was left, which will have to be replaced once the connections PCB is available.
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=\textwidth]{Images/Ball and Bean/Hardware/Ball and beam connection panel.pdf}
+        \caption{Schematic diagram}
+        \label{fig42}
+    \end{figure}
 
-\section{Ball and beam hardware implementation}
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=\textwidth]{Images/Ball and Bean/Hardware/PCB.png}
+        \caption{Final PCB}
+        \label{fig43}
+    \end{figure}
+
+\subsection{Simulink model}
+The control model that was designed is based on two main blocks of the DS1104 Slave DSP F240 Blockset library.
+\begin{itemize}
+    \item \textbf{DS1104SL\_DSP\_PWM}: used to generate the PWM and trigger signals.
+    \item \textbf{DS1104SL\_DSP\_PWM2D}: used to read the echo from the ultrasonic sensor.
+\end{itemize}
+The plant controller was determined empirically. It would be necessary to apply control theory to determine all the characteristic values that define this system.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Images/Ball and Bean/Similink/Simulink-Controller.png}
+    \caption{Simulink model}
+    \label{fig46}
+\end{figure}
+\subsubsection{PWM generation}
+For the generation of the PWM signals needed for this project, 3 inputs of the \textcolor{red}{\textbf{DS1104SL\_DSP\_PWM}} block were used. The block was programmed in asymmetric mode with a periodic pulse of 20 ms. Each channel has a MUX block where the START/STOP signal can be entered.
+\begin{enumerate}
+    \item \textbf{PWM Channel 1 - ST2PWM signal}: Used to set the pulse width of the trigger signal of the HC-SR04 ultrasonic sensor. A constant block with a value of \textbf{0.001} can be seen in the model. Multiplying this value by the period of the block gives the pulse width generated on channel 1 equal to 20 $\mu$s. 
+    \begin{equation}
+        Pulse_{Ch1} = 0,001 * 20 ms = 20 \mu s
+    \end{equation}
+    \item \textbf{PWM Channel 2 - SPWM7 signal}: Used to control the beam servo. In non-operational mode, it receives a constant value of 0.0522 which gives it a parallel position referenced to the base system. This is the rest position, which is reached when the error is zero.
+    \begin{equation}
+        Pulse_{Ch2} = 0,0522* 20 ms = 1,044 ms
+    \end{equation}
+   In this channel, a saturation block is applied to limit the servo's range of motion to prevent the beam from colliding with the base to which the robot is attached.
+   \item \textbf{PWM Channel 3 - SPWM8 signal}: Used for fixed positioning of the base servomotors. This position corresponds to a position such that the servomotor of the beam is parallel to the base when it is in a rest position.\par
+   A constant block with a value of \textbf{0.0775} can be seen in the model. Multiplying this value by the period of the block gives the pulse width generated on channel 3 equal to 1,55 ms. 
+    \begin{equation}
+        Pulse_{Ch3} = 0,0775* 20 ms = 1,55 ms
+    \end{equation}
+   \item \textbf{PWM Channel 4}: Disabled.
+\end{enumerate}
+
+\subsubsection{Echo pulse capture}
+As our sensor returns a variable length pulse depending on the distance from the measurement object, the \textcolor{red}{\textbf{DS1104SL\_DSP\_PWM2D}} block is used. This block has the main function of capturing PWM pulses.
+The Duty cycle 1 input will be used because the others are not necessary.\par
+As this block is read only, no configuration is needed for this task.\par
+The measured signal is smoothed by a TansferFcn block. The values of this block were determined empirically since at the time this file was written, no mathematical model of the system was implemented.
+\subsubsection{About the error}
+To establish the error and its scale, measurements were made using the ultrasonic sensor to determine the MIN and MAX limit values of the beam. In the following figure, these values and the convention adopted for the error can be seen graphically.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Images/Ball and Bean/Hardware/MAX-MIN.png}
+    \caption{MAX and MIN values of the beam}
+    \label{fig44}
+\end{figure}
+It is very important to note that these values change depending on how the trigger pulse is generated, i.e., its frequency, pulse width and mode (symmetric or asymmetric mode), and also on the geometry where the sound bounces. To exemplify the adopted convention, the data is taken from the figure \ref{fig44}.
+    \noindent $SetPoint = 0,057$\\
+    $ActPos = 0,092$\\
+    $Error = SetPoint - ActPos = 0,057 - 0,092 = -0,035$\\
+    So, we have a negative error value, but what does it mean?\par
+As mentioned, limits were set for the range of motion of the beam servomotor. These limits correspond to $+0.0095$ and $-0.0095$ referred to the constant block of Channel 2 whose value is $0.0522$.
+To see this in a graphical way the following figure is used:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Images/Ball and Bean/Hardware/SCALE.png}
+    \caption{PWM as a function of error }
+    \label{fig45}
+\end{figure}
+In the model, the value of the slope m is entered as a gain block whose value:
+
+\centering
+\begin{math}
+    m = \frac{0.0095}{0.114} = 0,0833    
+\end{math}
+
+
+
