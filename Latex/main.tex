@@ -1,0 +1,559 @@
+\input{Settings}
+
+\title{Tutorial DS1104}
+\author{Emmanuel Guillermo Pérez }
+\date{August 2022}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\titlepage
+\renewcommand*\contentsname{Summary}
+\tableofcontents
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\thispagestyle{empty}
+\section*{To-do List}
+
+\begin{todolist}%[\done]{}
+    \item{Abstract}
+    \item{Introduction}
+    \item{Controller board}
+    \begin{todolist}
+        \item{Types of controller boards}
+    \end{todolist} 
+    \item[\done]{Rapid control prototyping}
+    \item[\done]{Hardware in the loop simulation}
+    \item{dSPACE Controller Board}
+    \item[\done]{Hardware-in-the-loop demonstration for driving a servomotor PWM dSPACE}
+    \item {Ball and beam Simulink design - implementation}
+    \item {Ball and beam hardware implementation}
+    \item {KiCAD}
+    \item{References}
+    \item{Appendix´s}
+\end{todolist}
+\newpage
+
+\setcounter{page}{1}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{abstract}
+It´s a short overview of what the paper entails. No more than 6 lines.
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Controller Board}
+A piece of hardware that is responsible for capturing, processing and sending signals or information to the system to be controlled.
+It can be made up of elements such as:
+\begin{itemize}
+    \item Microcontroller/s to process the data.
+    \item I/O modules
+    \item Data bus modules, essentials for internal and external communication of the board.
+    \item A/D signal processing modules
+    \item Timers
+\end{itemize}
+This is where the firmware is housed, a specific class of computer software that provides the low-level control for a device's specific hardware.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{Rapid control prototyping/Section3.tex}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{Hardware in the loop/Section4.tex}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{dSPACE Controller Board}
+\subsection{General description}
+The dSPACE system is high performance digital control system based on the MPC8240 processor and the TMS320F240 DSP processor, a breakout panel and the software tools. It is directly interfaced with MATLAB/SIMULINK running on a PC. a SIMULINK block diagram is converted to real time C and plotting variables in real time in the DSP.
+
+\subsubsection{Board Architecture}
+
+\begin{figure}[h]
+    \centering
+    \begin{minipage}{0.49\textwidth}
+    \centering
+    \includegraphics[width=1\textwidth]{DS1104 ControlBoard}
+    \caption{DS1104 architecture}
+    \label{fig:Fig1}
+    \end{minipage}
+    \hfill
+    \centering
+    \begin{minipage}{0.49\textwidth}
+    \centering
+    \includegraphics[width=1\textwidth]{Images/Upper_View}
+    \caption{DS1104 Control Board}
+    \label{fig:Fig2}
+    \end{minipage}
+\end{figure}
+
+\subsubsection{Connection to External Devices}
+There are three different ways to connect external devices to the DS1104. To access the I/O units of the master PPC and the slave DSP, connect external devices
+\begin{itemize}
+    \item to the 100-pin I/O connector P1 of the DS1104, or
+    \item to the adapter cable with two 50-pin Sub-D connectors P1A and P1B, that are included in the DS1104 hardware package, or
+    \item to the optional connector panel CP1104 or the optional combined connector/LED panel CLP1104, which provides an additional array of LEDs indicating the states of the digital signals.
+\end{itemize}
+\subsubsection{Memory Features}
+The DS1104 is equipped with two memory sections:
+\begin{itemize}
+    \item Global memory
+    \subitem 32-MByte synchronous DRAM (SDRAM) for applications and data.
+    \subitem Fully cached (L1 cache).
+    \item Flash memory
+    \subitem 8 MByte, divided into 4 blocks of 2 MByte each.
+    \subitem 6.5 MByte can be used for a user-specific application.
+    \subitem 1.5 MByte are reserved for the boot firmware.
+    \subitem 8-bit read / write access by master PPC.
+    \subitem At least 100,000 erase cycles possible.
+\end{itemize}
+
+\subsubsection{Timer Features}
+The DS1104 board is equipped with 6 timer devices. The timers are driven by the bus clock, whose frequency is referred to as BCLK.\\
+Using ControlDesk Next Generation, you can get the current BCLK value via the Properties controlbar.\\
+The timers have the following characteristics:
+\begin{itemize}
+    \item Time Base Counter
+    \subitem Free-running 64-bit up counter driven by BCLK/4
+    \subitem Used for measurement of relative and absolute times
+    \subitem Used for time-stamping
+    \item Timers 0 … 3
+    \subitem 32-bit down counters driven by BCLK/8
+    \subitem Used as trigger source for periodic tasks
+    \subitem When the counter reaches 0, the timer generates an interrupt and the counter is reloaded with the value of the period register.
+    \item Decrementer
+    \subitem 32-bit down counter driven by BCLK/4
+    \subitem Used as trigger source for periodic tasks
+    \subitem When the counter reaches 0 the timer generates an interrupt. A new counter value is set by software in the timer interrupt service routine.
+\end{itemize}
+
+\subsubsection{Timer names}
+The names of the timers listed above are the names of the hardware timer devices used by RTLib. They differ from the names used by RTI Timer Interrupt block:\\
+
+\input{Tables/TimerNames.tex}
+
+\subsubsection {Timer interrupts for periodic events}
+Timers 0 … 3 and the Decrementer provide timer interrupts that you can use to trigger periodic events in a real-time application. These 32-bit down counters generate an interrupt whenever they reach 0. Then the timer is automatically reloaded.
+
+\subsubsection{Host Interface}
+The DS1104 provides a PCI interface requiring a single 5 V PCI slot. The interface has the following characteristics:
+\begin{itemize}
+    \item Access from/to the host PC via 33 MHz-PCI interface.\newline
+    The interface serves the board setup, program downloads and runtime data transfers from/to the host PC.
+    \item Interrupt line\newline
+The host interface provides a bidirectional interrupt line: Via this line, the host PC can send interrupt requests to the master PPC and vice versa. Both the host PC and the master PPC can monitor the state of the interrupt line to detect when the corresponding interrupt service is finished.
+\end{itemize}
+\subsection{Features Provided by the Master PPC}
+The DS1104’s main processing unit, MPC8240, consists of:
+
+\begin{itemize}
+    \item A PowerPC 603e microprocessor (master PPC) on which the control models will be implemented.
+    \subitem Running at 250 MHz (CPU clock)
+    \subitem Containing a 16-KByte L1 data cache
+    \subitem Containing a 16-KByte L1 instruction cache
+    \item An interrupt controller
+    \item A synchronous DRAM controller
+    \item Several timers
+    \item A PCI interface (5 V, 32 bit, 33 MHz)
+\end{itemize}
+
+The master PPC controls the following I/O features of the DS1104:
+
+\begin{itemize}
+    \item ADC Unit
+    \item DAC Unit
+    \item Bit I/O Unit
+    \item Incremental Encoder Interface
+    \item Serial Interface
+\end{itemize}
+
+\subsubsection{ADC Unit}
+The master PPC on the DS1104 controls an ADC unit featuring two
+different types of A/D converters:
+\begin{itemize}
+    \item 1 A/D converter (ADC1) multiplexed to four channels (signals ADCH1 … ADCH4).The input signals of the converter are selected by a 4:1 input multiplexer. The A/D converters have the following characteristics:
+    \subitem 16-bit resolution
+    \subitem ±10 V input voltage range
+    \subitem ± 5 mV offset error
+    \subitem ± 0.25 \% gain error
+    \subitem > 80 dB (at 10 kHz) signal-to-noise ratio (SNR)
+    \item 4 parallel A/D converters (ADC2 … ADC5) with one channel each (signals ADCH5 … ADCH8). The A/D converters have the following characteristics:
+    \subitem 12-bit resolution
+    \subitem ±10 V input voltage range
+    \subitem ± 5 mV offset error
+    \subitem ± 0.5 \% gain error
+    \subitem > 70 dB signal-to-noise ratio (SNR)
+\end{itemize}
+\textbf{Read modes}\par
+The A/D converters can be used in polling and in non-polling mode. In polling mode, the conversion values can be read if the end-of conversion flag in the ADC control register is set to 1. In non-polling mode, the conversion values are read immediately without waiting on the completion of the conversion. The non-polling functions are \textit{ds1104\_adc\_read\_ch\_immediately} and \textit{ds1104\_adc\_read\_conv\_immediately}.
+
+\noindent \textbf{Signal mapping}\par
+
+\input{Tables/ADC Signal mapping.tex}
+
+\noindent \textbf{Input circuit}\par
+The following illustration is a simplified diagram of the input circuitry of the ADCs.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Images/ADCs.png}
+    \caption{ADCs Input Circuit}
+    \label{ADCs}
+\end{figure}
+\ \\
+\noindent \textbf{RTI/RTLib support}\par
+You can access the master PPC’s ADC unit via RTI1104 and RTLib1104.\\
+For details, see:
+\begin{itemize}
+    \item ADC Unit in the DS1104 RTI Reference
+    \item ADC Unit in the DS1104 RTLib Reference
+\end{itemize}
+
+\noindent \textbf{DS1104MUX\_ADC}\par
+The purpose of this block is to read up to four channels of the A/D Converter specifying the channels to be multiplexed. The width of the block output vector (comprising the selected channels assigned to one converter) matches the number of the selected channels.\par
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.25\textwidth]{Images/DS1104MUX_ADC.png}
+    \caption{MUX ADC Block}
+    \label{MUX ADC}
+\end{figure}
+
+\noindent \textbf{DS1104ADC\_Cx}\par
+The purpose of this block is to read from a single channel of one of 4 parallel A/D converter channels. Lets you select a single channel within the range 5 … 8 and it´s scales between the analog input voltage and the output of the block:
+\input{Tables/ADC IO characteristic.tex}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.25\textwidth]{Images/DS1104ADC_Cx.png}
+    \caption{ADC\_Cx Block}
+    \label{ADC_Cx}
+\end{figure}
+
+\subsubsection{DAC Unit}
+The master PPC on the DS1104 controls a D/A converter. It has the following characteristics:
+\begin{itemize}
+    \item 8 parallel DAC channels (signals DACH1 … DACH8)
+    \item 16-bit resolution
+    \item ± 10 V output voltage range
+    \item ± 1 mV offset error, 10 $\mu$V/K offset drift
+    \item ± 0.1\% gain error, 25 ppm/K gain drift
+    \item > 80 dB (at 10 kHz) signal-to-noise ratio (SNR)
+    \item Transparent and latched mode
+\end{itemize}
+\textbf{Transparent and latched mode}\par
+The DAC unit of the master PPC can be driven in two operating modes:
+\begin{itemize}
+    \item In the \textit{transparent mode}, the converted value is output immediately.
+    \item In the \textit{latched mode}, the converted value is output after a strobe signal. This allows you to write output values to more than one channel, and output the values simultaneously.
+\end{itemize}
+
+\noindent \textbf{Synchronization with ST1PWM signal}\par
+Updating DAC outputs can be synchronized with PWM signal generation or an external trigger source. 
+
+\noindent \textbf{I/O - signal mapping}\par
+The following table shows the mapping between the RTI block and RTLib functions and the corresponding pins used by the DAC unit.
+
+\input{Tables/DAC Signal mapping.tex}
+
+\noindent \textbf{Output circuit}\par
+The following illustration is a simplified diagram of the output circuitry of the DACs.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Images/DACx.png}
+    \caption{DACs Output Circuit}
+    \label{DACs}
+\end{figure}
+
+\noindent \textbf{Electrical characteristics}\par
+The analog outputs are single-ended bipolar outputs with the following characteristics.
+\input{Tables/DACElectricalCharacteristics.tex}
+
+\noindent \textbf{RTI/RTLib support}\par
+You can access the master PPC’s DAC unit via RTI1104 and RTLib1104 to write to one of the 8 parallel D/A converter channels.\\
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.25\textwidth]{Images/DS1104MUX_DAC.png}
+    \caption{DAC\_Cx Block}
+    \label{DAC_Cx}
+\end{figure}
+
+\noindent \textbf{I/O characteristics}\par
+\begin{itemize}
+    \item Scaling between the analog output voltage and the input of the block:
+    \input{Tables/DAC IO characteristics.tex}
+    \item The block provides its outputs in:
+    \subitem Transparent mode, that is the channel is converted and output immediately.
+    \subitem Latched mode, that is the channel is converted after synchronous triggering.
+\end{itemize}
+
+\noindent \textbf{Initialization}\par
+During the model initialization phase, an initial output voltage value is written to each D/A channel. This is especially useful if a channel is used within a triggered or enabled subsystem that is not executed right from the start of the simulation.
+
+With the initialization value, the channel has a defined output during this simulation phase.
+
+In other words, lets you specify the initial output voltage at the start of the simulation. The value must remain in the output voltage range ±10 V.
+
+\noindent \textbf{Termination}\par
+When the simulation terminates, the channel holds the last output value by default. You can specify a user-defined output value on termination, and use these settings to drive your external hardware into a safe final condition.
+
+The specified termination values of I/O channels are set when the simulation executes its termination function by setting the simState variable to STOP. If the real‑time process is stopped by using ControlDesk's Stop RTP command, the processor resets immediately without executing termination functions. The current values of the I/O channels are kept and the specified termination values are not set.
+
+Output on termination lets you either keep the current output voltage when the simulation terminates, or set the output to a specified value. The value must remain in the output voltage range ±10 V
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection{Bit I/O Unit}
+The master PPC on the DS1104 controls a bit I/O unit with the following characteristics:
+\begin{itemize}
+    \item 20-bit digital I/O
+    \item Direction selectable for each channel individually
+    \item ±5 mA maximum output current
+    \item TTL voltage range for input and output
+    \item You can also use the bit I/O unit provided by the slave DSP, which contains 14-bit digital I/O.
+\end{itemize}
+
+\noindent \textbf{I/O characteristics}\par 
+Relationship between the digital input and the output of the DS1104BIT\_IN\_Cx block:
+\input{Tables/IO Characteristics.tex}
+
+Relation between the digital output and the input of the DS1104BIT\_OUT\_Cx block:
+\input{Tables/IO Output characteristics.tex}
+\ \\
+\ \\
+
+\noindent \textbf{Description}\par
+
+During the model initialization phase, an initial digital output value is written to each channel. This is especially useful if a channel is used within a triggered or enabled subsystem that is not executed right from the start of the simulation. With the initialization value, all channels have defined outputs during this simulation phase.
+
+When the simulation terminates, all channels hold their last digital output values by default. You can specify a user-defined output value on termination, and use these settings to drive your external hardware into a safe final condition.
+
+The specified termination values of I/O channels are set when the simulation executes its termination function by setting the simState variable to STOP. If you stop the real‑time application by using ControlDesk Next Generation's Stop RTP ( ControlDesk Next Generation Reference) command, the processor resets immediately without executing termination functions. The current values of the I/O channels are kept and the specified termination values are not set.
+
+\noindent \textbf{RTI block support}\par
+The master PPC library contains several blocks for programming the digital I/O unit.
+
+\textit{To read from the digital I/O port}
+\begin{itemize}
+    \item Use DS1104BIT\_IN\_Cx to read certain bits of the digital I/O port. Lets you select a channel within the range 0 … 19 where as the channels 16 … 19 are multiplexed with 4 external interrupts.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.35\textwidth]{Images/DS1104BIT_IN_Cx.png}
+    \caption{BIT\_IN\_Cx Block}
+    \label{BIT_IN_Cx}
+\end{figure}
+
+\textit{To write to the digital I/O port}
+\begin{itemize}
+    \item Use DS1104BIT\_OUT\_Cx to write certain bits of the digital I/O port.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.35\textwidth]{Images/MASTER BIT OUT.png}
+    \caption{BIT\_OUT\_Cx Block}
+    \label{BIT_OUT_Cx}
+\end{figure}
+\ \\
+\ \\
+
+The following table shows the mapping between the RTI blocks and RTLib functions and the corresponding pins used by the Bit I/O unit.
+
+\input{Tables/IO Unit mapping.tex}
+
+\newpage
+
+\section{Features Provided by the Slave DSP}
+The DS1104’s slave DSP subsystem consists of
+\begin{itemize}
+    \item A Texas Instruments TMS320F240 DSP
+    \subitem Running at 20 MHz
+    \subitem 4Kx16 bit dual-port memory (DPMEM) used for communication with the master PPC
+\end{itemize}
+
+\subsection{Slave DSP Bit I/O Unit}
+The slave DSP on the DS1104 provides a bit I/O unit with the following characteristics:
+\begin{itemize}
+    \item 14-bit digital I/O
+    \item Direction selectable for each channel individually
+    \item ±13 mA maximum output current
+    \item TTL voltage range for input and output
+\end{itemize}
+
+\noindent \textbf{I/O mapping }\par
+
+The following table shows the mapping between the RTI blocks and RTLib functions and the corresponding pins used by the slave DSP bit I/O unit.
+
+\input{Tables/slave DSP/Slave DSP Bit IO Unit.tex}
+
+\subsection{Slave DSP Timing I/O Unit}
+
+The slave DSP on the DS1104 provides a timing I/O unit that you can use to generate and measure pulse-width modulated (PWM) and square-wave signals.
+
+\noindent \textbf{PWM signal generation}\par
+
+The PWM signal generation has the following characteristics:
+\begin{itemize}
+    \item Outputs for the generation of up to four 1-phase PWM signals with variable:
+    \subitem Duty cycles (T/Tp ratio)
+    \subitem PWM frequencies
+    \subitem Polarity
+    \subitem Symmetric or asymmetric PWM mode
+    \item Non-inverted and inverted outputs for 3-phase PWM signal generation (PWM3) with variable:
+    \subitem Duty cycles (T/Tp ratio)
+    \subitem PWM frequencies
+    \subitem Deadband
+    \item Non-inverted and inverted outputs for the generation of 3-phase space vector PWM signals (PWMSV) with variable:
+    \subitem Values T$_1$ and T$_2$ of the space vector
+    \subitem Sector of the space vector
+    \subitem PWM frequencies
+    \subitem Deadband
+\end{itemize}
+
+\noindent \textbf{Square-wave signal generation (D2F)}\par
+
+The square-wave signal generation (D2F) provides outputs for the generation of up to four square-wave signals with variable frequencies.
+
+\noindent \textbf{PWM signal measurement (PWM2D)}\par
+
+The PWM signal measurement (PWM2D) provides inputs for the measurement of the duty cycle and frequency of up to four PWM signals. For details, see Slave DSP PWM Signal Measurement (PWM2D) on page 60.
+
+\noindent \textbf{Square-wave signal measurement (F2D)}\par
+
+The square-wave signal measurement (F2D) provides inputs for the measurement of up to four square-wave signals.
+
+\noindent \textbf{I/O mapping}\par
+\input{Tables/slave DSP/Slave PWM IO Pin-Signals.tex}
+
+\subsection{Basics of Slave DSP PWM Signal Generation}
+
+The slave DSP of the DS1104 provides outputs for PWM signal generation. Each PWM pulse is centered around the middle of the corresponding PWM period (symmetric PWM generation mode).
+
+\noindent \textbf{PWM signals}\par
+
+PWM signal generation is crucial to many motor and motion control applications. PWM signals are pulse trains with fixed frequency and magnitude and variable pulse width. There is one pulse of fixed magnitude in every PWM period.
+
+However, the width of the pulses changes from period to period according to a modulating signal. When a PWM signal is applied to the gate of a power transistor, it causes the turn-on/turn-off intervals of the transistor to change from one PWM period to another, according to the same modulating signal. The frequency of a PWM signal is usually much higher than that of the modulating signal, or the fundamental frequency, so that the energy delivered to the motor and its load depends mainly on the modulating signal.
+
+\noindent \textbf{PWM period, duty cycle and resolution}\par
+
+For PWM signals, you can specify the PWM period TP (= T$_high$+ T$_low$) in the range 200 ns … 819,2 ms. For PWM3 and PWMSV signals, the PWM period TP applies to each of the 3 phases. For 1-phase PWM signals, the PWM period TP applies to each of the four PWM output channels. If you perform 3-phase and 1-phase PWM signal generation at the same time, you can specify different PWM periods for the 3-phase and 1-phase PWM signals.
+
+You can also specify the duty cycle. The following illustration shows how the duty cycle d (= T$_high$/ TP) is defined. The available duty cycle range is 0 … 1 (0 … 100 \%).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Images/Symmetric PWM generation.png}
+    \caption{Symmetric PWM generation}
+    \label{Symmetric PWM generation}
+\end{figure}
+
+Depending on the selected PWM period, the following resolutions are given. They apply to symmetric PWM signals.
+
+\input{Tables/slave DSP/SymmetricResolution.tex}
+
+\noindent \textbf{Deadband}\par
+
+For the three PWM duty cycles of PWM3 and PWMSV, you can specify one deadband value. This is the time gap between the rising and falling edges of the non-inverted and inverted PWM signals. The deadband introduces a time delay that allows complete turning off of one power transistor before the turning on of the other power transistor.
+
+The maximum deadband value is 100 $\mu$s. However, it should not be greater than T$_P$/2.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Images/Original PWM Signal with Deadband.png}
+    \caption{Original PWM Signal with Deadband}
+    \label{Original PWM Signal with Deadband}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Images/Inverted PWM Signal with Deadband.png}
+    \caption{Inverted PWM Signal with Deadband}
+    \label{Inverted PWM Signal with Deadband}
+\end{figure}
+
+\noindent \textbf{PWM outputs}\par
+For each of the PWM generation modes (1-phase, 3-phase and space vector), the PWM outputs can be specified. The running PWM generation can be suspended and the corresponding channels can be set to a specified TTL level (high or low). Only the output of the PWM signal is disabled. Signal calculation is still running and if you enable PWM generation, the currently calculated signal is output, and not the defined initialization or termination value. The PWM outputs can be specified for the two simulation phases (RTI):
+\begin{itemize}
+    \item During the initialization phase, you can disable the PWM generation of selected channels (channel pairs for PWM3 and PWMSV) and set each output (pair) to a defined TTL level (high or low). No signal is generated during the initialization.
+    \item During run time, you can stop PWM generation and set the outputs to a defined TTL level (high or low). At any time you can resume in generating the PWM signal. If the simulation terminates the outputs can be set to defined TTL levels.
+\end{itemize}
+
+If the PWM stop feature is disabled, the normal initialization and termination routines are executed. That means the specified duty cycles for initialization and termination are used.
+
+\subsection{1-Phase PWM Signal Generation (PWM)}
+
+\noindent \textbf{Asymmetric PWM mode}
+As an alternative to the symmetric PWM generation mode, you can also let each PWM pulse start at the beginning of the corresponding PWM period (asymmetric PWM mode). Switching between symmetric and asymmetric PWM mode applies to all of the four 1-phase PWM output channels. The following illustration shows two active high symmetric and asymmetric 1-phase PWM signals.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Images/Symmetric and asymmetric PWM generation.png}
+    \caption{Symmetric and asymmetric PWM generation}
+    \label{Symmetric and asymmetric PWM generation}
+\end{figure}
+
+\noindent \textbf{PWM period and resolution in asymmetric mode}\par
+
+In the asymmetric mode, the PWM period T$_P$ must be in the range 200 ns … 409,6 ms. Depending on the period, the following resolutions are given:
+
+\input{Tables/slave DSP/Asymmetric PWM.tex}
+\noindent \textit{Due to quantization effects, you will encounter considerable deviations between the desired PWM period T$_P$ and the generated PWM period, especially for higher PWM frequencies.}
+
+\noindent \textbf{Polarity of PWM signals}\par
+
+For each of the four 1-phase PWM channels, you can specify separately whether to generate active high or active low PWM signals.
+
+\noindent \textbf{PWM output}\par
+Via RTI you can specify separately for each of the four 1-phase PWM channels, whether or not to generate PWM signals. In case of PWM stop, the output of each channel can be set to TTL high or low.
+
+\noindent \textbf{RTI/RTLib support}\par
+You can perform 1-phase PWM signal generation on the slave DSP via RTI1104 and RTLib1104. For details, see
+\begin{itemize}
+    \item DS1104SL\_DSP\_PWM
+    \item Slave DSP PWM Generation
+\end{itemize}
+
+Using the ST1PWM Pin
+
+Objective
+The ST1PWM pin is lead to the interrupt controller of the DS1104, so it is possible to generate interrupts that are synchronous to PWM signal generation. You can also use the pin as a further external interrupt input (user interrupt). In this case the ST1PWM pin has to be configured as an input (using RTLib1104).
+
+Strobing I/O
+
+In addition, you can use the ST1PWM pin for strobing the I/O (ADCs, DACs and incremental encoder signals). The required trigger signal can be either generated by the slave DSP or driven externally. In the second case the ST1PWM pin has to be configured as an input or the slave DSP must be in reset mode.
+
+Recognizing signals at the ST1PWM pin
+
+To allow the interrupt controller to recognize an incoming signal at the ST1PWM pin (PWM interrupt, external interrupt or trigger for strobing), the interrupt signal must be kept high for at least 1 $\mu$s. The interrupt is activated by the high to low transition of the signal. The signal must remain low for at least 100 ns after the transition.
+
+\newpage 
+
+\input{Ball and Bean implementation/Ball abd Bean.tex}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newpage
+\printbibliography[
+heading=bibintoc,
+title={References}
+]
+
+\newpage
+\appendix
+
+\includepdf[pages=-,pagecommand=\thispagestyle{plain}]{Datasheets/Datasheet - futaba S3003.pdf}
+
+\includepdf[pages=-,pagecommand=\thispagestyle{plain}]{Datasheets/Datasheet - HC-SR04.pdf}
+
+\end{document}
